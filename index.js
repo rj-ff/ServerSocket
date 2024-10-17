@@ -20,13 +20,13 @@ wss.on('connection', function connection(ws) {
     
     try {
       const parsedMessage = JSON.parse(message);
-      const { type, clientId, serverId, id, destination, sdp, candidate } = parsedMessage;
+      const { type, responseId, requestId, id, destination, sdp, candidate } = parsedMessage;
       console.log(`type: ` + type);
 
       // Register client/server IDs
       if (type === 'register') {
-        connections[ws.id] = { ws, clientId, serverId, id, destination };
-        console.log(`Registered clientId: ${clientId}, serverId: ${serverId}`);
+        connections[ws.id] = { ws, responseId, requestId, id, destination };
+        console.log(`Registered responseId: ${responseId}, requestId: ${requestId}`);
       }
 
       // Forward WebRTC offer/answer SDP to the correct destination (client or server)
@@ -49,32 +49,32 @@ wss.on('connection', function connection(ws) {
 
       // Handle start/stop stream messages
       if (type === 'START_STREAM') {
-        const clientConn = Object.values(connections).find(conn => conn.id === "client");
+        const clientConn = Object.values(connections).find(conn => conn.id === "response");
         if (clientConn && clientConn.ws.readyState === WebSocket.OPEN) {
             const startStreamMessage = {
                 type: 'START_STREAM',
-                clientId,    // Include clientId
-                serverId,    // Include serverId
+                responseId,    // Include responseId
+                requestId,    // Include requestId
                 id,          // Include id
                 destination  // Include destination
             };
             clientConn.ws.send(JSON.stringify(startStreamMessage));
-            console.log(`Forwarded start stream to client ${clientId}`);
+            console.log(`Forwarded start stream to client ${responseId}`);
         }
     }
     
     if (type === 'STOP_STREAM') {
-        const clientConn = Object.values(connections).find(conn => conn.id === "client");
+        const clientConn = Object.values(connections).find(conn => conn.id === "response");
         if (clientConn && clientConn.ws.readyState === WebSocket.OPEN) {
             const stopStreamMessage = {
                 type: 'STOP_STREAM',
-                clientId,    // Include clientId
-                serverId,    // Include serverId
+                responseId,    // Include responseId
+                requestId,    // Include requestId
                 id,          // Include id
                 destination  // Include destination
             };
             clientConn.ws.send(JSON.stringify(stopStreamMessage));
-            console.log(`Forwarded stop stream to client ${clientId}`);
+            console.log(`Forwarded stop stream to client ${responseId}`);
         }
     }
     
