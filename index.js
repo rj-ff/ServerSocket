@@ -21,7 +21,7 @@ wss.on('connection', function connection(ws) {
     try {
       const parsedMessage = JSON.parse(message);
       const { type, id, destination, sdp, candidate } = parsedMessage;
-      console.log(`type: ` + type);
+      console.log(`type: ` + type + ' id: ' + id + ' destination: ' + destination);
 
       // Register client/server IDs
       if (type === 'register') {
@@ -61,10 +61,12 @@ wss.on('connection', function connection(ws) {
                 //id,          // Include id
                 //destination  // Include destination
             };
+            clientConn.ws.
             clientConn.ws.send(JSON.stringify(startStreamMessage));
             console.log(`Forwarded start stream to client ${destination}`);
         }
         else{
+          
           console.log(`NOT Forwarded start_stream to client ${destination}`);
         }
     }
@@ -81,7 +83,7 @@ wss.on('connection', function connection(ws) {
             console.log(`Forwarded stop stream to client ${responseId}`);
         }
         else{
-          console.log(`NOT Forwarded stop_stream to client ${destination}`);
+          console.log(`NOT Forwarded stop_stream to client ${destination} `);
         }
     }
     
