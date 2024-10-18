@@ -20,13 +20,13 @@ wss.on('connection', function connection(ws) {
     
     try {
       const parsedMessage = JSON.parse(message);
-      const { type, responseId, requestId, id, destination, sdp, candidate } = parsedMessage;
+      const { type, id, destination, sdp, candidate } = parsedMessage;
       console.log(`type: ` + type);
 
       // Register client/server IDs
       if (type === 'register') {
-        connections[ws.id] = { ws, responseId, requestId, id, destination };
-        console.log(`Registered responseId: ${responseId}, requestId: ${requestId}`);
+        connections[ws.id] = { ws,  id, destination };
+        console.log(`Registered responseId: ${id}, requestId: ${destination}`);
       }
 
       // Forward WebRTC offer/answer SDP to the correct destination (client or server)
@@ -35,6 +35,9 @@ wss.on('connection', function connection(ws) {
         if (targetConn && targetConn.ws.readyState === WebSocket.OPEN) {
           targetConn.ws.send(JSON.stringify({ type, sdp }));
           console.log(`Forwarded ${type} to ${destination}`);
+        }
+        else{
+
         }
       }
 
@@ -49,32 +52,36 @@ wss.on('connection', function connection(ws) {
 
       // Handle start/stop stream messages
       if (type === 'START_STREAM') {
-        const clientConn = Object.values(connections).find(conn => conn.id === "response");
+        const clientConn = Object.values(connections).find(conn => conn.id === destination);
         if (clientConn && clientConn.ws.readyState === WebSocket.OPEN) {
             const startStreamMessage = {
                 type: 'START_STREAM',
-                responseId,    // Include responseId
-                requestId,    // Include requestId
-                id,          // Include id
-                destination  // Include destination
+                //responseId,    // Include responseId
+                //requestId,    // Include requestId
+                //id,          // Include id
+                //destination  // Include destination
             };
             clientConn.ws.send(JSON.stringify(startStreamMessage));
-            console.log(`Forwarded start stream to client ${responseId}`);
+            console.log(`Forwarded start stream to client ${destination}`);
+        }
+        else{
+          console.log(`NOT Forwarded start_stream to client ${destination}`);
         }
     }
     
     if (type === 'STOP_STREAM') {
-        const clientConn = Object.values(connections).find(conn => conn.id === "response");
+        const clientConn = Object.values(connections).find(conn => conn.id === destination);
         if (clientConn && clientConn.ws.readyState === WebSocket.OPEN) {
             const stopStreamMessage = {
                 type: 'STOP_STREAM',
-                responseId,    // Include responseId
-                requestId,    // Include requestId
-                id,          // Include id
+                id,
                 destination  // Include destination
             };
             clientConn.ws.send(JSON.stringify(stopStreamMessage));
             console.log(`Forwarded stop stream to client ${responseId}`);
+        }
+        else{
+          console.log(`NOT Forwarded stop_stream to client ${destination}`);
         }
     }
     
