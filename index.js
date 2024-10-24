@@ -51,6 +51,16 @@ wss.on('connection', function connection(ws) {
           console.log(`Could not forward ICE candidate to ${destination}`);
         }
       }
+      if (type === 'data') {
+        const targetConn = Object.values(connections).find(conn => conn.id === destination);
+        if (targetConn && targetConn.ws.readyState === WebSocket.OPEN) {
+          targetConn.ws.send(JSON.stringify({ type, message }));
+          console.log(`Forwarded MESSAGE ${message} candidate to ${destination}`);
+        } else {
+          console.log(`Could not forward MESSAGE to ${destination}`);
+        }
+      }
+
 
       // Handle start/stop stream messages
       // if (type === 'START_STREAM') {
