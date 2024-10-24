@@ -16,7 +16,7 @@ wss.on('connection', function connection(ws) {
   console.log('A new client connected');
 
   ws.on('message', function incoming(message) {
-    console.log(`Received message: ${message}`);
+    //console.log(`Received message: ${message}`);
 
     try {
       const parsedMessage = JSON.parse(message);
@@ -35,7 +35,7 @@ wss.on('connection', function connection(ws) {
         const targetConn = Object.values(connections).find(conn => conn.id === destination);
         if (targetConn && targetConn.ws.readyState === WebSocket.OPEN) {
           targetConn.ws.send(JSON.stringify({ type, sdp }));
-          console.log(`Forwarded ${type} to ${destination}`);
+          //console.log(`Forwarded ${type} to ${destination}`);
         } else {
           console.log(`Could not forward ${type} to ${destination}`);
         }
@@ -46,9 +46,9 @@ wss.on('connection', function connection(ws) {
         const targetConn = Object.values(connections).find(conn => conn.id === destination);
         if (targetConn && targetConn.ws.readyState === WebSocket.OPEN) {
           targetConn.ws.send(JSON.stringify({ type, candidate }));
-          console.log(`Forwarded ICE candidate to ${destination}`);
+          //console.log(`Forwarded ICE candidate to ${destination}`);
         } else {
-          console.log(`Could not forward ICE candidate to ${destination}`);
+          //console.log(`Could not forward ICE candidate to ${destination}`);
         }
       }
       if (type === 'data') {
