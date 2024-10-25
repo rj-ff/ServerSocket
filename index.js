@@ -15,19 +15,19 @@ const connections = {};
 wss.on('connection', function connection(ws) {
   console.log('A new client connected');
 
-  ws.on('message', function incoming(message) {
+  ws.on('message', function incoming(_message) {
     //console.log(`Received message: ${message}`);
 
     try {
-      const parsedMessage = JSON.parse(message);
-      const { type, id, destination, sdp, candidate } = parsedMessage;
-      console.log(`type: ${type}, id: ${id}, destination: ${destination}`);
+      const parsedMessage = JSON.parse(_message);
+      const { type, id, destination, sdp, candidate, message } = parsedMessage;
+      //console.log(`type: ${type}, id: ${id}, destination: ${destination}`);
 
       // Register client/server IDs
       if (type === 'register') {
         ws.id = id;  // Assign the id to the WebSocket instance
         connections[ws.id] = { ws, id, destination }; // Store connection
-        console.log(`Registered responseId: ${id}, requestId: ${destination}`);
+        console.log(`Registered ${id}`);
       }
 
       // Forward WebRTC offer/answer SDP to the correct destination (client or server)
@@ -35,7 +35,7 @@ wss.on('connection', function connection(ws) {
         const targetConn = Object.values(connections).find(conn => conn.id === destination);
         if (targetConn && targetConn.ws.readyState === WebSocket.OPEN) {
           targetConn.ws.send(JSON.stringify({ type, sdp }));
-          //console.log(`Forwarded ${type} to ${destination}`);
+          console.log(`Forwarded ${type} to ${destination}`);
         } else {
           console.log(`Could not forward ${type} to ${destination}`);
         }
@@ -48,16 +48,16 @@ wss.on('connection', function connection(ws) {
           targetConn.ws.send(JSON.stringify({ type, candidate }));
           //console.log(`Forwarded ICE candidate to ${destination}`);
         } else {
-          //console.log(`Could not forward ICE candidate to ${destination}`);
+          console.log(`Could not forward ICE candidate to ${destination}`);
         }
       }
       if (type === 'data') {
         const targetConn = Object.values(connections).find(conn => conn.id === destination);
         if (targetConn && targetConn.ws.readyState === WebSocket.OPEN) {
-          targetConn.ws.send(JSON.stringify({ type, message }));
+          targetConn.ws.send(JSON.stringify({ type,  message}));
           console.log(`Forwarded MESSAGE ${message} candidate to ${destination}`);
         } else {
-          console.log(`Could not forward MESSAGE to ${destination}`);
+          console.log(`Could not forward ${message} to ${destination}`);
         }
       }
 
