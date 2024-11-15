@@ -38,11 +38,12 @@ wss.on('connection', function connection(ws) {
         console.log(`Received pong from client: ${ws.id}`);
         return;
       }
-
+      var conn= true;
       const targetConn = connections[destination];
       if (!targetConn || targetConn.ws.readyState !== WebSocket.OPEN) {
         console.log(`Destination ${destination} is unavailable`);
-        return;
+        conn=false; 
+        //return;
       }
 
       // Switch statement for message types
@@ -58,6 +59,9 @@ wss.on('connection', function connection(ws) {
           break;
         case 'data':
           console.log(`data message ${message} `);
+          if(!conn)
+            return;
+
           targetConn.ws.send(JSON.stringify({ type, message }));
           console.log(`Forwarded data message ${message} to ${destination}`);
           break;
