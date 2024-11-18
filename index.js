@@ -10,6 +10,7 @@ const connections = {};
 // Send a "ping" every 4 minutes to keep connections alive
 setInterval(() => {
   Object.values(connections).forEach(({ ws }) => {
+
     if (ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ type: 'ping' }));
       console.log('ping sent');
@@ -25,11 +26,13 @@ wss.on('connection', function connection(ws) {
       const parsedMessage = JSON.parse(_message);
       const { type, id, destination, sdp, candidate, message } = parsedMessage;
 
+      console.log('Received message:', parsedMessage);
+
       // Register client
       if (type === 'register') {
         ws.id = id;
         ws.destination = destination;
-        connections[ws.id] = { ws, id,destination };
+        connections[ws.id] = { ws, id, destination };
         console.log(`Registered client: ${id} destination ${destination}`);
 
         // Send a registration confirmation back to the client
@@ -50,12 +53,17 @@ wss.on('connection', function connection(ws) {
         console.log(`Received pong from client: ${ws.id}`);
         return;
       }
-      
-      var conn = true;
+
+      // Ensure destination is valid
+      if (!destination || !connections[destination]) {
+        console.log(`Invalid destination: ${destination}`);
+        return;
+      }
+
       const targetConn = connections[destination];
       if (!targetConn || targetConn.ws.readyState !== WebSocket.OPEN) {
         console.log(`Destination ${destination} is unavailable`);
-        conn = false; 
+        return;
       }
 
       // Switch statement for message types
@@ -70,9 +78,7 @@ wss.on('connection', function connection(ws) {
           console.log(`Forwarded ICE candidate to ${destination}`);
           break;
         case 'data':
-          console.log(`data message ${message}`);
-          if (!conn) return;
-
+          console.log(`Data message ${message}`);
           targetConn.ws.send(JSON.stringify({ type, message }));
           console.log(`Forwarded data message ${message} to ${destination}`);
           break;
