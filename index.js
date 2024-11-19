@@ -26,7 +26,7 @@ wss.on('connection', function connection(ws) {
       const parsedMessage = JSON.parse(_message);
       const { type, id, destination, sdp, candidate, message } = parsedMessage;
 
-      console.log('Received message:', parsedMessage);
+      //console.log('Received message:', parsedMessage);
 
       // Register client
       if (type === 'register') {
@@ -71,16 +71,16 @@ wss.on('connection', function connection(ws) {
         case 'offer':
         case 'answer':
           targetConn.ws.send(JSON.stringify({ type, sdp }));
-          console.log(`Forwarded ${type} to ${destination}`);
+          //console.log(`Forwarded ${type} to ${destination}`);
           break;
         case 'ice_candidate':
           targetConn.ws.send(JSON.stringify({ type, candidate }));
-          console.log(`Forwarded ICE candidate to ${destination}`);
+         // console.log(`Forwarded ICE candidate to ${destination}`);
           break;
         case 'data':
           console.log(`Data message ${message}`);
           targetConn.ws.send(JSON.stringify({ type, message }));
-          console.log(`Forwarded data message ${message} to ${destination}`);
+          //console.log(`Forwarded data message ${message} to ${destination}`);
           break;
         case 'start_stream':
         case 'stop_stream':
