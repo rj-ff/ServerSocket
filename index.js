@@ -24,7 +24,7 @@ wss.on('connection', function connection(ws) {
   ws.on('message', function incoming(_message) {
     try {
       const parsedMessage = JSON.parse(_message);
-      const { type, id, destination, sdp, candidate, message } = parsedMessage;
+      const { type, id, destination, sdp, candidate, message, ln,lt } = parsedMessage;
 
       //console.log('Received message:', parsedMessage);
 
@@ -80,8 +80,18 @@ wss.on('connection', function connection(ws) {
         case 'data':
           console.log(`Data message ${message}`);
           targetConn.ws.send(JSON.stringify({ type, message }));
-          //console.log(`Forwarded data message ${message} to ${destination}`);
+          console.log(`Forwarded data message ${message} to ${destination}`);
           break;
+        case 'fetch':
+            console.log(`Data message ${message} ${type}`);
+            targetConn.ws.send(JSON.stringify({ type, message }));
+           console.log(`Forwarded data message ${message} to ${destination}`);
+            break;
+        case 'location':
+              console.log(`Data message ${message}`);
+              targetConn.ws.send(JSON.stringify({ type,message, ln, lt }));
+              console.log(`Forwarded location message ${message} to ${destination}`);
+              break;
         case 'start_stream':
         case 'stop_stream':
           targetConn.ws.send(JSON.stringify({ type, id, destination }));
@@ -107,6 +117,7 @@ wss.on('connection', function connection(ws) {
         id: disconnectedClient.id,
         destination: disconnectedClient.destination,
       };
+      delete connections[ws.id];
 
       const targetConn = connections[disconnectedClient.destination];
       if (targetConn && targetConn.ws.readyState === WebSocket.OPEN) {
@@ -116,7 +127,7 @@ wss.on('connection', function connection(ws) {
     }
 
     // Remove the connection from the list
-    delete connections[ws.id];
+    
   });
 });
 
