@@ -1,9 +1,19 @@
 const WebSocket = require('ws');
+const http = require('http');
+// Create an HTTP server (required for WebSocket server)
+const server = http.createServer();
 
+// Attach WebSocket server to the HTTP server
+// const wss = new WebSocket.Server({ server }, () => {
+//   console.log('WebSocket server started');
+// });
 const port = process.env.PORT || 3000;
 const wss = new WebSocket.Server({ port }, () => {
   console.log(`WebSocket server started on port ${port}`);
 });
+// Disable timeout for the server
+server.timeout = 0;
+
 
 const connections = {};
 
@@ -25,7 +35,7 @@ wss.on('connection', function connection(ws) {
       const parsedMessage = JSON.parse(_message);
       const { type, id, destination, sdp, candidate, message, ln, lt } = parsedMessage;
 
-      console.log(`Received message:`, parsedMessage);
+     // console.log(`Received message:`, parsedMessage);
 
       // Register client
       if (type === 'register') {
