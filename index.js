@@ -10,10 +10,9 @@ const connections = {};
 // Send a "ping" every 4 minutes to keep connections alive
 setInterval(() => {
   Object.values(connections).forEach(({ ws }) => {
-
     if (ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ type: 'ping' }));
-      console.log('ping sent');
+      console.log(`Ping sent to client: ${ws.id || 'unknown'}`);
     }
   });
 }, 4 * 60 * 1000); // 4 minutes
@@ -24,9 +23,9 @@ wss.on('connection', function connection(ws) {
   ws.on('message', function incoming(_message) {
     try {
       const parsedMessage = JSON.parse(_message);
-      const { type, id, destination, sdp, candidate, message, ln,lt } = parsedMessage;
+      const { type, id, destination, sdp, candidate, message, ln, lt } = parsedMessage;
 
-      //console.log('Received message:', parsedMessage);
+      console.log(`Received message:`, parsedMessage);
 
       // Register client
       if (type === 'register') {
@@ -36,17 +35,16 @@ wss.on('connection', function connection(ws) {
           console.log(`Duplicate registration attempt detected for client ID: ${id}`);
         }
         connections[ws.id] = { ws, id, destination };
-        console.log(`Registered client: ${id} destination ${destination}`);
+        console.log(`Registered client: ${id}, destination: ${destination}`);
         console.log(`Total connections: ${Object.keys(connections).length}`);
 
         // Send a registration confirmation back to the client
         const mm = {
           type: 'connection',
-          message: "registered",
+          message: 'registered',
           id: ws.id,
           destination: ws.id,
         };
-
 
         ws.send(JSON.stringify(mm));
         console.log(`Sent registration confirmation to client: ${ws.id}`);
@@ -76,27 +74,27 @@ wss.on('connection', function connection(ws) {
         case 'offer':
         case 'answer':
           targetConn.ws.send(JSON.stringify({ type, sdp }));
-          //console.log(`Forwarded ${type} to ${destination}`);
+          console.log(`Forwarded ${type} to ${destination}`);
           break;
         case 'ice_candidate':
           targetConn.ws.send(JSON.stringify({ type, candidate }));
-         // console.log(`Forwarded ICE candidate to ${destination}`);
+          console.log(`Forwarded ICE candidate to ${destination}`);
           break;
         case 'data':
-          console.log(`Data message ${message}`);
+          console.log(`Data message: ${message}`);
           targetConn.ws.send(JSON.stringify({ type, message }));
-          console.log(`Forwarded data message ${message} to ${destination}`);
+          console.log(`Forwarded data message: ${message} to ${destination}`);
           break;
         case 'fetch':
-            console.log(`Data message ${message} ${type}`);
-            targetConn.ws.send(JSON.stringify({ type, message }));
-           console.log(`Forwarded data message ${message} to ${destination}`);
-            break;
+          console.log(`Fetch message: ${message}`);
+          targetConn.ws.send(JSON.stringify({ type, message }));
+          console.log(`Forwarded fetch message: ${message} to ${destination}`);
+          break;
         case 'location':
-              console.log(`Data message ${message}`);
-              targetConn.ws.send(JSON.stringify({ type,message, ln, lt }));
-              console.log(`Forwarded location message ${message} to ${destination}`);
-              break;
+          console.log(`Location message: ${message}, ln: ${ln}, lt: ${lt}`);
+          targetConn.ws.send(JSON.stringify({ type, message, ln, lt }));
+          console.log(`Forwarded location message to ${destination}`);
+          break;
         case 'start_stream':
         case 'stop_stream':
           targetConn.ws.send(JSON.stringify({ type, id, destination }));
@@ -110,18 +108,18 @@ wss.on('connection', function connection(ws) {
     }
   });
 
-  ws.on('close', () => {
-    console.log(`Client disconnected: ${ws.id}`);
+  ws.on('close', (code, reason) => {
+    console.log(`Client disconnected: ${ws.id || 'unknown'}, Code: ${code}, Reason: ${reason}`);
 
-    // Send a disconnection message to the destination
     const disconnectedClient = connections[ws.id];
     if (disconnectedClient && disconnectedClient.id) {
       const r = {
         type: 'disconnection',
-        message: "dc",
+        message: 'dc',
         id: disconnectedClient.id,
         destination: disconnectedClient.destination,
       };
+
       delete connections[ws.id];
 
       const targetConn = connections[disconnectedClient.destination];
@@ -131,11 +129,13 @@ wss.on('connection', function connection(ws) {
       }
     }
 
-    // Remove the connection from the list
-    
+    console.log(`Total connections after disconnection: ${Object.keys(connections).length}`);
+  });
+
+  ws.on('error', (error) => {
+    console.error(`Error on client ${ws.id || 'unknown'}:`, error.message);
   });
 });
-
 
 
 // const WebSocket = require('ws');
