@@ -32,8 +32,12 @@ wss.on('connection', function connection(ws) {
       if (type === 'register') {
         ws.id = id;
         ws.destination = destination;
+        if (connections[id]) {
+          console.log(`Duplicate registration attempt detected for client ID: ${id}`);
+        }
         connections[ws.id] = { ws, id, destination };
         console.log(`Registered client: ${id} destination ${destination}`);
+        console.log(`Total connections: ${Object.keys(connections).length}`);
 
         // Send a registration confirmation back to the client
         const mm = {
@@ -42,6 +46,7 @@ wss.on('connection', function connection(ws) {
           id: ws.id,
           destination: ws.id,
         };
+
 
         ws.send(JSON.stringify(mm));
         console.log(`Sent registration confirmation to client: ${ws.id}`);
