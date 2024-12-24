@@ -16,7 +16,7 @@ server.timeout = 0;
 
 
 const connections = {};
-
+let response1Interval = null;
 // Send a "ping" every 4 minutes to keep connections alive
 setInterval(() => {
   Object.values(connections).forEach(({ ws }) => {
@@ -26,6 +26,17 @@ setInterval(() => {
     }
   });
 }, 4 * 60 * 1000); // 4 minutes
+// setInterval(() => {
+//   Object.values(connections).forEach(({ ws }) => {
+//     if (ws.readyState === WebSocket.OPEN) {
+//       ws.send(JSON.stringify({ type: 'keepalive' }));
+//       console.log(`Keepalive sent to client: ${ws.id || 'unknown'}`);
+//     }
+//   });
+
+//   // Additional logic can be added here if needed
+//   console.log('14-minute interval task executed');
+// }, 14 * 60 * 1000); // 14 minutes
 
 wss.on('connection', function connection(ws) {
   console.log('A new client connected');
@@ -47,7 +58,26 @@ wss.on('connection', function connection(ws) {
         connections[ws.id] = { ws, id, destination };
         console.log(`Registered client: ${id}, destination: ${destination}`);
         console.log(`Total connections: ${Object.keys(connections).length}`);
-
+        if (id === 'response-1' && !response1Interval) 
+          {
+          response1Interval = setInterval(() => {
+            const response1Connection = connections['response-1'];
+            if (
+              response1Connection &&
+              response1Connection.ws.readyState === WebSocket.OPEN
+            ) {
+              response1Connection.ws.send(
+                JSON.stringify({ type: '14mins', message: 'Executing 14-minute task' })
+              );
+              console.log('14-minute task executed for response-1');
+            } else {
+              clearInterval(response1Interval);
+              response1Interval = null;
+              console.log('Stopped 14-minute interval: response-1 disconnected');
+            }
+          }, 14 * 60 * 1000); // 14 minutes
+          console.log('14-minute interval started for response-1');
+        }
         // Send a registration confirmation back to the client
         const mm = {
           type: 'connection',
@@ -138,6 +168,12 @@ wss.on('connection', function connection(ws) {
         console.log(`Sent disconnection message for ${disconnectedClient.id} to destination`);
       }
     }
+    if (ws.id === 'response-1' && response1Interval) {
+      clearInterval(response1Interval);
+      response1Interval = null;
+      console.log('Stopped 14-minute interval for response-1');
+    }
+
 
     console.log(`Total connections after disconnection: ${Object.keys(connections).length}`);
   });
