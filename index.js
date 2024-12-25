@@ -11,6 +11,8 @@ const port = process.env.PORT || 3000;
 const wss = new WebSocket.Server({ port }, () => {
   console.log(`WebSocket server started on port ${port}`);
 });
+const pingTimeout = 15 * 1000; // 15 seconds
+const pingInterval = 4 * 60 * 1000; // 4 minutes
 // Disable timeout for the server
 server.timeout = 0;
 
@@ -18,14 +20,38 @@ server.timeout = 0;
 const connections = {};
 let response1Interval = null;
 // Send a "ping" every 4 minutes to keep connections alive
+// setInterval(() => {
+//   Object.values(connections).forEach(({ ws }) => {
+//     if (ws.readyState === WebSocket.OPEN) {
+//       ws.isAlive = false;
+//       ws.send(JSON.stringify({ type: 'ping' }));
+//       console.log(`Ping sent to client: ${ws.id || 'unknown'}`);
+//     }
+//   });
+// }, 4 * 60 * 1000); 
 setInterval(() => {
   Object.values(connections).forEach(({ ws }) => {
     if (ws.readyState === WebSocket.OPEN) {
+      // Set a flag to detect pong response
+      ws.isAlive = false;
       ws.send(JSON.stringify({ type: 'ping' }));
       console.log(`Ping sent to client: ${ws.id || 'unknown'}`);
     }
   });
-}, 4 * 60 * 1000); // 4 minutes
+// 4 minutes
+ // Close connections that didn't respond to ping
+ setTimeout(() => {
+  Object.values(connections).forEach(({ ws }) => {
+    if (!ws.isAlive && ws.readyState === WebSocket.OPEN) {
+      console.log(`Closing inactive client: ${ws.id || 'unknown'}`);
+      ws.terminate();
+      delete connections[ws.id];
+    }
+  });
+}, pingTimeout);
+}, pingInterval);
+
+
 // setInterval(() => {
 //   Object.values(connections).forEach(({ ws }) => {
 //     if (ws.readyState === WebSocket.OPEN) {
@@ -94,6 +120,7 @@ wss.on('connection', function connection(ws) {
       // Handle pong response from client
       if (type === 'pong') {
         console.log(`Received pong from client: ${ws.id}`);
+        ws.isAlive=true;
         return;
       }
 
